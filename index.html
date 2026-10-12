@@ -32,11 +32,24 @@
 
       <section id="stage" class="stage" aria-label="Video stage">
         <video id="cameraPlayer" class="camera-player" autoplay muted playsinline aria-label="Live device camera"></video>
-        <div id="snapshotFrame" class="snapshot-frame">
-          <canvas id="cameraSnapshot" class="camera-snapshot" aria-label="Last camera frame"></canvas>
-          <span class="scan-diamond" aria-hidden="true"></span>
+        <div id="analysisHeader" class="analysis-header" hidden>
+          <div class="analysis-logo-panel">
+            <img src="drc-logo-clean.png" alt="DRC DS Gem and Diamond Analyzer 6">
+          </div>
+          <div id="snapshotFrame" class="snapshot-frame">
+            <canvas id="cameraSnapshot" class="camera-snapshot" aria-label="Last camera frame"></canvas>
+            <span class="scan-diamond" aria-hidden="true"></span>
+          </div>
         </div>
         <div id="players" class="players"></div>
+        <div id="processingStatus" class="processing-status" hidden><span>Processing</span><strong id="processingTime">30 sec</strong><progress id="processingProgress" max="30" value="0" aria-label="Processing progress"></progress></div>
+        <div id="resultFrame" class="analysis-result" hidden>
+          <div class="report-body">
+            <ol class="report-findings"><li>Natural</li><li>Revitalized</li><li>Highly Purified</li><li>Safe</li></ol>
+            <div class="report-graph"><span>Excellent</span><div class="report-bar" role="img" aria-label="Excellent: full green bar"></div></div>
+          </div>
+          <fieldset class="report-verdict"><legend>Final Result</legend><h2>Man made Diamond</h2></fieldset>
+        </div>
         <div id="emptyStage" class="empty-stage">
           <div class="empty-icon" aria-hidden="true"><span>+</span></div>
           <h1 id="emptyTitle">Load your first set</h1>

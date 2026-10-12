@@ -1,9 +1,36 @@
 const DB_NAME = 'cutboard-local-videos';
 const STORE_NAME = 'videos';
 const MAX_VIDEOS = 8;
+const BUILTIN_VIDEOS = [{
+  id: 'diamond-analysis-preset',
+  name: 'Diamond Analysis',
+  type: 'video/mp4',
+  size: 2645834,
+    url: 'diamond-analysis.mp4',
+    resultUrl: 'result-excellent.jpg',
+  playDuration: 30,
+  builtin: true,
+  report: { findings: ['NATURAL', 'REVITALIZED', 'HIGHLY PURIFIED', 'SAFE'], grade: 'EXCELLENT', result: 'MAN MADE DIAMOND', tone: 'good' },
+}, {
+  id: 'diamond-analysis-bad-preset',
+  name: 'Synthetic Diamond',
+  type: 'video/mp4',
+  size: 2645834,
+  url: 'diamond-analysis.mp4',
+  resultUrl: 'result-bad.jpg',
+  playDuration: 30,
+  builtin: true,
+  report: { findings: ['SYNTHETIC', 'BAD INCLUSIONS', 'NO PURIFICATIONS', 'HARMFUL SUBSTANCES'], grade: 'BAD', result: 'SYNTHETIC DIAMOND', tone: 'bad' },
+}];
 
 const state = { videos: [], activeIndex: null, blackout: false, cameraActive: false, cameraReady: false, cameraStream: null };
 const playerElements = [];
+let analysisTimer = null;
+let processingInterval = null;
+let playbackGeneration = 0;
+const processingStatus = document.querySelector('#processingStatus');
+const processingTime = document.querySelector('#processingTime');
+const processingProgress = document.querySelector('#processingProgress');
 const stage = document.querySelector('#stage');
 const players = document.querySelector('#players');
 const slots = document.querySelector('#slots');
@@ -20,6 +47,12 @@ const cameraButton = document.querySelector('#cameraButton');
 const cameraButtonText = document.querySelector('#cameraButtonText');
 const cameraSnapshot = document.querySelector('#cameraSnapshot');
 const snapshotFrame = document.querySelector('#snapshotFrame');
+const analysisHeader = document.querySelector('#analysisHeader');
+const resultFrame = document.querySelector('#resultFrame');
+new ResizeObserver(() => {
+  players.style.setProperty('--media-width', `${players.clientWidth}px`);
+  players.style.setProperty('--media-height', `${players.clientHeight}px`);
+}).observe(players);
 const keypadButton = document.querySelector('#keypadButton');
 const controlPad = document.querySelector('#controlPad');
 
@@ -51,7 +84,7 @@ async function persistVideos() {
     const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
     store.clear();
-    state.videos.forEach(({ url, ...video }, order) => store.put({ ...video, order }));
+    state.videos.filter((video) => !video.builtin).forEach(({ url, ...video }, order) => store.put({ ...video, order }));
     transaction.oncomplete = resolve;
     transaction.onerror = () => reject(transaction.error);
   });
@@ -81,13 +114,46 @@ function stopPlayers(reset = true) {
   });
 }
 
+function resetAnalysisPresentation() {
+  playbackGeneration += 1;
+  window.clearInterval(processingInterval);
+  processingStatus.hidden = true;
+  window.clearTimeout(analysisTimer);
+  analysisTimer = null;
+  stage.classList.remove('analysis-mode', 'preset-analysis');
+  analysisHeader.hidden = true;
+  resultFrame.hidden = true;
+  snapshotFrame.classList.remove('snapshot-active', 'scan-complete');
+}
+
+function showAnalysisResult(index, video) {
+  if (state.activeIndex !== index || !video.resultUrl) return;
+  window.clearTimeout(analysisTimer);
+  analysisTimer = null;
+  window.clearInterval(processingInterval);
+  processingStatus.hidden = true;
+  const player = playerElements[index];
+  player?.pause();
+  player?.classList.remove('player-active');
+  const report = video.report;
+  if (report) {
+    resultFrame.dataset.tone = report.tone;
+    resultFrame.querySelectorAll('.report-findings li').forEach((item, i) => { item.textContent = report.findings[i]; });
+    resultFrame.querySelector('.report-graph > span').textContent = report.grade;
+    resultFrame.querySelector('.report-bar').setAttribute('aria-label', `${report.grade}: full ${report.tone === 'bad' ? 'red' : 'green'} bar`);
+    resultFrame.querySelector('.report-verdict h2').textContent = report.result;
+  }
+  resultFrame.hidden = false;
+  snapshotFrame.classList.add('scan-complete');
+}
+
 function enterBlackout() {
   stopPlayers();
+  resetAnalysisPresentation();
   state.activeIndex = null;
   state.blackout = true;
   state.cameraActive = false;
   cameraPlayer.classList.remove('camera-active');
-  snapshotFrame.classList.remove('snapshot-active');
   emptyStage.hidden = true;
   playerElements.forEach((player) => player.classList.remove('player-active'));
   requestFullscreen();
@@ -98,14 +164,12 @@ function playSlot(index) {
   const video = state.videos[index];
   const player = playerElements[index];
   if (!video || !player) return;
+  resetAnalysisPresentation();
   requestFullscreen();
   if (state.cameraActive && cameraPlayer.videoWidth && cameraPlayer.videoHeight) {
     cameraSnapshot.width = cameraPlayer.videoWidth;
     cameraSnapshot.height = cameraPlayer.videoHeight;
     cameraSnapshot.getContext('2d')?.drawImage(cameraPlayer, 0, 0, cameraSnapshot.width, cameraSnapshot.height);
-    snapshotFrame.classList.remove('snapshot-active');
-    void snapshotFrame.offsetWidth;
-    snapshotFrame.classList.add('snapshot-active');
   }
   playerElements.forEach((item, itemIndex) => {
     if (itemIndex !== index && item) {
@@ -119,19 +183,39 @@ function playSlot(index) {
   state.activeIndex = index;
   emptyStage.hidden = true;
   cameraPlayer.classList.remove('camera-active');
+  stage.classList.add('analysis-mode');
+  stage.classList.toggle('preset-analysis', Boolean(video.builtin));
+  analysisHeader.hidden = false;
+  snapshotFrame.classList.add('snapshot-active');
   player.classList.add('player-active');
   player.currentTime = 0;
-  player.play().catch(() => showNotice('Playback was blocked. Press the number key again.'));
+  const generation = playbackGeneration;
+  player.play().then(() => {
+    if (generation !== playbackGeneration) return;
+    if (video.resultUrl && video.playDuration) {
+      const started = performance.now();
+      processingStatus.hidden = false;
+      processingTime.textContent = `${video.playDuration} sec`;
+      processingProgress.max = video.playDuration;
+      processingProgress.value = 0;
+      processingInterval = window.setInterval(() => {
+        const elapsed = (performance.now() - started) / 1000;
+        processingTime.textContent = `${Math.max(0, Math.ceil(video.playDuration - elapsed))} sec`;
+        processingProgress.value = Math.min(video.playDuration, elapsed);
+      }, 100);
+      analysisTimer = window.setTimeout(() => showAnalysisResult(index, video), video.playDuration * 1000);
+    }
+  }).catch(() => showNotice('Playback was blocked. Press the number key again.'));
   renderSlots();
 }
 
 async function showCamera() {
   requestFullscreen();
   stopPlayers();
+  resetAnalysisPresentation();
   state.activeIndex = null;
   state.blackout = false;
   emptyStage.hidden = true;
-  snapshotFrame.classList.remove('snapshot-active');
   playerElements.forEach((player) => player.classList.remove('player-active'));
 
   try {
@@ -174,6 +258,7 @@ function createPlayer(video, index) {
   player.disablePictureInPicture = true;
   player.controls = false;
   player.className = 'player';
+  player.loop = Boolean(video.resultUrl && video.playDuration);
   player.setAttribute('controlslist', 'nodownload noplaybackrate nofullscreen');
   player.addEventListener('ended', () => enterBlackout());
   player.addEventListener('error', () => showNotice('This browser cannot play that video format.'));
@@ -222,15 +307,18 @@ function renderSlots() {
     const preview = makeElement('span', 'slot-preview');
     preview.append(makeElement('span', 'play-glyph', '▶'));
     const copy = makeElement('span', 'slot-copy');
-    copy.append(makeElement('strong', '', video.name), makeElement('small', '', readableSize(video.size)));
+    copy.append(makeElement('strong', '', video.name), makeElement('small', '', video.builtin ? '30 SEC ANALYSIS' : readableSize(video.size)));
     playButton.append(makeElement('span', 'slot-number', String(index + 1)), preview, copy);
     playButton.addEventListener('click', () => playSlot(index));
 
-    const removeButton = makeElement('button', 'remove-button', '×');
-    removeButton.title = 'Remove video';
-    removeButton.setAttribute('aria-label', `Remove ${video.name}`);
-    removeButton.addEventListener('click', () => removeVideo(index));
-    card.append(playButton, removeButton);
+    card.append(playButton);
+    if (!video.builtin) {
+      const removeButton = makeElement('button', 'remove-button', '×');
+      removeButton.title = 'Remove video';
+      removeButton.setAttribute('aria-label', `Remove ${video.name}`);
+      removeButton.addEventListener('click', () => removeVideo(index));
+      card.append(removeButton);
+    }
     slots.append(card);
   }
 }
@@ -240,13 +328,14 @@ async function addVideos(files) {
   if (!videoFiles.length) return;
   const space = MAX_VIDEOS - state.videos.length;
   const accepted = videoFiles.slice(0, space);
+  const storedCount = state.videos.filter((video) => !video.builtin).length;
   const additions = accepted.map((file, index) => ({
     id: crypto.randomUUID(),
     name: file.name.replace(/\.[^/.]+$/, ''),
     type: file.type,
     size: file.size,
     blob: file,
-    order: state.videos.length + index,
+    order: storedCount + index,
     url: URL.createObjectURL(file),
   }));
   state.videos.push(...additions);
@@ -262,6 +351,7 @@ async function addVideos(files) {
 }
 
 async function removeVideo(index) {
+  if (state.videos[index]?.builtin) return;
   const [removed] = state.videos.splice(index, 1);
   URL.revokeObjectURL(removed.url);
   state.activeIndex = null;
@@ -318,26 +408,33 @@ window.addEventListener('keydown', (event) => {
 document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement) {
     stopPlayers(false);
+    resetAnalysisPresentation();
+    state.activeIndex = null;
     state.blackout = false;
     state.cameraActive = false;
     cameraPlayer.classList.remove('camera-active');
-    snapshotFrame.classList.remove('snapshot-active');
-    emptyStage.hidden = state.activeIndex !== null;
+    emptyStage.hidden = false;
+    renderSlots();
   }
 });
 
 (async function initialize() {
+  let stored = [];
   try {
-    const stored = await readStoredVideos();
-    state.videos = stored.slice(0, MAX_VIDEOS).map((video) => ({ ...video, url: URL.createObjectURL(video.blob) }));
+    stored = await readStoredVideos();
   } catch {
     showNotice('Local storage is unavailable. Videos will last until this tab closes.');
   }
+  state.videos = [
+    ...BUILTIN_VIDEOS,
+    ...stored.slice(0, MAX_VIDEOS - BUILTIN_VIDEOS.length).map((video) => ({ ...video, url: URL.createObjectURL(video.blob) })),
+  ];
   renderPlayers();
   renderSlots();
 })();
 
 window.addEventListener('beforeunload', () => {
-  state.videos.forEach((video) => URL.revokeObjectURL(video.url));
+  state.videos.filter((video) => !video.builtin).forEach((video) => URL.revokeObjectURL(video.url));
+  window.clearTimeout(analysisTimer);
   state.cameraStream?.getTracks().forEach((track) => track.stop());
 });

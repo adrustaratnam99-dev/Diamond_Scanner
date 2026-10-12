@@ -215,6 +215,105 @@
   box-shadow: 0 0 10px #eaff91, 0 0 24px #8dff00, inset 0 0 14px rgb(126 255 0 / 82%);
 }
 
+.analysis-header[hidden], .analysis-result[hidden] { display: none; }
+
+.analysis-header {
+  position: absolute;
+  z-index: 4;
+  inset: 0 0 50% 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  gap: clamp(8px, 1.6vmin, 20px);
+  padding: clamp(8px, 1.6vmin, 20px);
+  background: #020302;
+}
+
+.analysis-logo-panel {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: transparent;
+}
+
+.analysis-logo-panel img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent), linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
+  mask-composite: intersect;
+}
+
+.analysis-header .snapshot-frame {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  opacity: 1;
+}
+
+.stage.analysis-mode .players {
+  inset: 50% 0 0;
+  background: #000;
+}
+
+.analysis-result {
+  position: absolute;
+  z-index: 3;
+  inset: 50% 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #101416;
+  padding: 18px 5%;
+  border-top: 1px solid #48504d;
+}
+
+.report-heading { display: flex; justify-content: space-between; gap: 12px; color: #c9b988; font: 600 11px Arial, sans-serif; padding-bottom: 12px; border-bottom: 1px solid #333b3b; }
+.report-sample { color: #9ca6a5; }
+.report-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 7%; align-items: center; }
+.report-label { color: #aeb9b7; font-size: 10px; }
+.report-verdict h2 { margin: 10px 0 14px; font-size: 34px; line-height: 1.08; font-weight: 500; color: #f3f4ed; }
+.report-grade { color: #a2ed99; font-size: 16px; }
+.report-findings { display: grid; gap: 0; }
+.report-findings > div { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid #303a38; }
+.report-findings span { color: #788682; font: 11px monospace; }
+.report-findings strong { font-size: 16px; font-weight: 400; flex: 1; }
+.report-findings b { color: #a2ed99; font: 10px monospace; }
+.preset-analysis .players { overflow: hidden; }
+.preset-analysis .player { inset: 0; width: 100%; height: 100%; transform: none; object-fit: fill; }
+
+.processing-status { position: absolute; z-index: 5; bottom: 18px; left: 5%; right: 5%; display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 12px 16px; background: rgb(5 8 12 / 85%); color: #edf5ef; font-size: 14px; }
+.processing-status[hidden] { display: none; }
+.processing-status progress { grid-column: 1 / -1; width: 100%; height: 3px; appearance: none; border: 0; background: #303d34; }
+.processing-status progress::-webkit-progress-bar { background: #303d34; }
+.processing-status progress::-webkit-progress-value { background: #41ed08; }
+.processing-status progress::-moz-progress-bar { background: #41ed08; }
+
+.analysis-result img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.snapshot-frame.scan-complete::after {
+  animation: none !important;
+  opacity: 0;
+}
+
+.snapshot-frame.scan-complete .scan-diamond {
+  animation: none !important;
+  opacity: .72;
+}
+
 @media (max-width: 700px) {
   .topbar { height: auto; min-height: 60px; padding: 10px 12px; grid-template-columns: auto 1fr; }
   .brand > span:last-child { display: none; }
@@ -223,6 +322,16 @@
   .keypad-button, .camera-button, .blackout-button { width: 38px; padding: 0; font-size: 0; }
   .keypad-button span, .camera-button span, .blackout-button span { margin: 0; }
   .snapshot-frame { width: clamp(112px, 34vw, 220px); }
+  .analysis-header { inset: 0 0 52% 0; gap: 8px; padding: 8px; }
+  .analysis-header .snapshot-frame { width: 100%; }
+  .stage.analysis-mode .players, .analysis-result { inset: 48% 0 0; }
+  .report-verdict h2 { font-size: 23px; margin: 6px 0 10px; }
+  .report-findings strong { font-size: 12px; }
+  .report-findings > div { gap: 7px; padding: 10px 0; }
+  .report-findings b { font-size: 8px; }
+  .report-heading { font-size: 8px; padding-bottom: 8px; }
+  .analysis-result { padding: 12px 4%; }
+  .report-body { gap: 5%; }
   .stage { height: 62dvh; min-height: 360px; }
   .scanner-standby { padding-bottom: 60px; }
   .control-pad { bottom: 8px; gap: 4px; padding: 6px; }
@@ -233,4 +342,59 @@
 @media (prefers-reduced-motion: reduce) {
   .camera-player, .snapshot-frame { transition: none; }
   .snapshot-frame.snapshot-active::before, .snapshot-frame.snapshot-active::after, .snapshot-active .scan-diamond { animation: none; }
+}
+
+.analysis-result { background: #1b1a20; padding: 18px 5% 24px; gap: 12px; }
+.analysis-result { --report-color: #36ed00; text-transform: uppercase; }
+.analysis-result[data-tone="bad"] { --report-color: #ff1424; }
+.analysis-result:not([hidden]) { animation: report-reveal 700ms ease-out both; }
+.analysis-result:not([hidden]) .report-bar { transform-origin: bottom; animation: bar-reveal 2400ms linear 700ms both; }
+.processing-status { text-transform: uppercase; }
+@keyframes report-reveal { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bar-reveal { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.report-body { grid-template-columns: minmax(0, 1fr) minmax(100px, .36fr); gap: 5%; }
+.report-findings { display: block; margin: 0; padding-left: 1.6em; color: #e9f8f6; font-size: 28px; line-height: 1.45; }
+.report-graph { height: 100%; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; color: #36ed00; font-size: 28px; padding: 8px 0; }
+.report-bar { flex: 1; min-height: 30px; width: 72px; max-height: 210px; background: #36ed00; }
+.report-verdict { margin: 0; min-width: 0; border: 1px solid #36ed00; padding: 5px 12px 12px; color: #36ed00; text-align: center; }
+.report-verdict legend { text-align: left; font-size: 12px; padding: 0 4px; }
+.report-verdict h2 { margin: 0; font-size: 30px; line-height: 1.1; color: #36ed00; font-weight: 500; }
+.report-graph, .report-verdict, .report-verdict h2 { color: var(--report-color); }
+.report-verdict { border-color: var(--report-color); }
+.report-bar { background: var(--report-color); }
+.report-findings { font-size: 25px; }
+@media (prefers-reduced-motion: reduce) {
+  .analysis-result:not([hidden]), .analysis-result:not([hidden]) .report-bar { animation: none; }
+}
+@media (max-width: 700px), (max-height: 550px) {
+  .analysis-result { padding: 10px 5% 14px; gap: 8px; }
+  .report-findings { font-size: 18px; }
+  .report-graph { font-size: 20px; gap: 8px; }
+  .report-bar { width: 44px; }
+  .report-verdict h2 { font-size: 23px; }
+  .processing-status { bottom: 10px; font-size: 12px; padding: 8px 10px; }
+}
+
+.analysis-header .snapshot-frame { box-shadow: 0 0 8px rgb(183 255 25 / 45%), 0 0 18px rgb(77 166 0 / 24%); }
+.report-findings li { padding-bottom: 5px; }
+.processing-status strong { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 700px) and (orientation: portrait) {
+  .analysis-header { height: min(48%, 54vw); inset: 0 0 auto; gap: 10px; padding: 10px 8px; }
+  .stage.analysis-mode .players, .analysis-result { inset: min(48%, 54vw) 0 0; }
+  .analysis-header .snapshot-frame { min-height: 0; }
+  .analysis-header .camera-snapshot { object-fit: contain; }
+  .analysis-result { justify-content: center; gap: 24px; padding: 24px 5%; }
+  .report-body { flex: 0 1 auto; grid-template-columns: minmax(0, 1fr) 84px; gap: 12px; }
+  .report-findings { font-size: 18px; line-height: 1.55; }
+  .report-graph { font-size: 15px; justify-content: center; }
+  .report-bar { flex: none; height: 160px; min-height: 40px; }
+  .report-verdict h2 { font-size: 21px; }
+  .report-verdict legend { font-size: 10px; }
+}
+
+@media (max-width: 360px) and (orientation: portrait) {
+  .report-findings { font-size: 16px; }
+  .report-body { grid-template-columns: minmax(0, 1fr) 72px; gap: 8px; }
+  .report-verdict h2 { font-size: 19px; }
 }
