@@ -24,7 +24,7 @@
         <div class="top-actions">
           <button class="keypad-button" id="keypadButton" aria-pressed="false"><span aria-hidden="true">#</span> Keyboard</button>
           <button class="camera-button" id="cameraButton"><span aria-hidden="true"></span><b id="cameraButtonText">Enable camera</b></button>
-          <button class="blackout-button" id="blackoutButton"><span aria-hidden="true"></span> Black screen</button>
+          <button class="blackout-button" id="blackoutButton"><span aria-hidden="true"></span> Logo screen</button>
           <button class="add-button" id="addButton"><b aria-hidden="true">+</b> Add videos</button>
         </div>
         <input id="fileInput" class="file-input" type="file" accept="video/*" multiple>
@@ -44,6 +44,7 @@
         <div id="players" class="players"></div>
         <div id="processingStatus" class="processing-status" hidden><span>Processing</span><strong id="processingTime">30 sec</strong><progress id="processingProgress" max="30" value="0" aria-label="Processing progress"></progress></div>
         <div id="resultFrame" class="analysis-result" hidden>
+          <button id="previewReport" class="report-preview-button">Preview / Print Report</button>
           <div class="report-body">
             <ol class="report-findings"><li>Natural</li><li>Revitalized</li><li>Highly Purified</li><li>Safe</li></ol>
             <div class="report-graph"><span>Excellent</span><div class="report-bar" role="img" aria-label="Excellent: full green bar"></div></div>
@@ -51,13 +52,14 @@
           <fieldset class="report-verdict"><legend>Final Result</legend><h2>Man made Diamond</h2></fieldset>
         </div>
         <div id="emptyStage" class="empty-stage">
+          <img class="standby-logo" src="drc-logo-clean.png" alt="DRC DS Gem and Diamond Analyzer 6">
           <div class="empty-icon" aria-hidden="true"><span>+</span></div>
           <h1 id="emptyTitle">Load your first set</h1>
           <p id="emptyCopy">Select up to eight videos from this device.</p>
           <button id="emptyAddButton" class="primary-button">Choose videos</button>
         </div>
         <div id="controlPad" class="control-pad" hidden aria-label="On-screen keyboard">
-          <button data-key="0" aria-label="Black screen">0<span>BLACK</span></button>
+          <button data-key="0" aria-label="Logo screen">0<span>LOGO</span></button>
           <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button><button data-key="4">4</button>
           <button data-key="5">5</button><button data-key="6">6</button><button data-key="7">7</button><button data-key="8">8</button>
           <button data-key="9" aria-label="Live camera">9<span>CAM</span></button>
@@ -67,7 +69,7 @@
       <section class="library" aria-label="Video slots">
         <div class="library-heading">
           <div><span>VIDEO SLOTS</span><strong id="videoCount">0 / 8</strong></div>
-          <div class="keyboard-hint"><kbd>0</kbd> BLACK <kbd>1-8</kbd> VIDEO <kbd>9</kbd> CAMERA</div>
+          <div class="keyboard-hint"><kbd>0</kbd> LOGO <kbd>1-8</kbd> VIDEO <kbd>9</kbd> CAMERA</div>
         </div>
         <div id="slots" class="slots"></div>
       </section>

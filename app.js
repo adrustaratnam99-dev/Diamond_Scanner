@@ -20,7 +20,25 @@ const BUILTIN_VIDEOS = [{
   resultUrl: 'result-bad.jpg',
   playDuration: 30,
   builtin: true,
-  report: { findings: ['SYNTHETIC', 'BAD INCLUSIONS', 'NO PURIFICATIONS', 'HARMFUL SUBSTANCES'], grade: 'BAD', result: 'SYNTHETIC DIAMOND', tone: 'bad' },
+  report: { findings: ['SYNTHETIC', 'BAD INCLUSIONS', 'NOT PURIFIED', 'HARMFUL SUBSTANCES'], grade: 'BAD', result: 'SYNTHETIC DIAMOND', tone: 'bad' },
+}, {
+  id: 'diamond-analysis-neutral-preset',
+  name: 'Neutral',
+  type: 'video/mp4',
+  size: 2645834,
+  url: 'diamond-analysis.mp4',
+  playDuration: 30,
+  builtin: true,
+  report: { findings: ['ATYPICAL', 'VARIOUS INCLUSIONS', 'NOT PURIFIED', 'DIVERGENT'], grade: 'NEUTRAL', result: 'NEUTRAL', tone: 'neutral' },
+}, {
+  id: 'diamond-analysis-undetected-preset',
+  name: 'Not Detected',
+  type: 'video/mp4',
+  size: 2645834,
+  url: 'diamond-analysis.mp4',
+  playDuration: 30,
+  builtin: true,
+  report: { findings: ['VEILED', 'UNCERTAIN INCLUSIONS', 'NOT PURIFIED', 'AMBIGUOUS'], grade: 'NOT DETECTED', result: 'NOT DETECTED', tone: 'undetected' },
 }];
 
 const state = { videos: [], activeIndex: null, blackout: false, cameraActive: false, cameraReady: false, cameraStream: null };
@@ -28,6 +46,8 @@ const playerElements = [];
 let analysisTimer = null;
 let processingInterval = null;
 let playbackGeneration = 0;
+let latestReport = null;
+let hasSnapshot = false;
 const processingStatus = document.querySelector('#processingStatus');
 const processingTime = document.querySelector('#processingTime');
 const processingProgress = document.querySelector('#processingProgress');
@@ -127,7 +147,7 @@ function resetAnalysisPresentation() {
 }
 
 function showAnalysisResult(index, video) {
-  if (state.activeIndex !== index || !video.resultUrl) return;
+  if (state.activeIndex !== index || !video.report) return;
   window.clearTimeout(analysisTimer);
   analysisTimer = null;
   window.clearInterval(processingInterval);
@@ -140,11 +160,13 @@ function showAnalysisResult(index, video) {
     resultFrame.dataset.tone = report.tone;
     resultFrame.querySelectorAll('.report-findings li').forEach((item, i) => { item.textContent = report.findings[i]; });
     resultFrame.querySelector('.report-graph > span').textContent = report.grade;
-    resultFrame.querySelector('.report-bar').setAttribute('aria-label', `${report.grade}: full ${report.tone === 'bad' ? 'red' : 'green'} bar`);
+    const graphDescription = { good: 'green bar', bad: 'red bar', neutral: 'equal-height green and red bars', undetected: 'light blue bar' };
+    resultFrame.querySelector('.report-bar').setAttribute('aria-label', `${report.grade}: ${graphDescription[report.tone]}`);
     resultFrame.querySelector('.report-verdict h2').textContent = report.result;
   }
   resultFrame.hidden = false;
   snapshotFrame.classList.add('scan-complete');
+  latestReport = { ...video.report, completedAt: new Date().toISOString(), id: `DRC6-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, photo: hasSnapshot ? cameraSnapshot.toDataURL('image/jpeg', .9) : null };
 }
 
 function enterBlackout() {
@@ -154,7 +176,7 @@ function enterBlackout() {
   state.blackout = true;
   state.cameraActive = false;
   cameraPlayer.classList.remove('camera-active');
-  emptyStage.hidden = true;
+  emptyStage.hidden = false;
   playerElements.forEach((player) => player.classList.remove('player-active'));
   requestFullscreen();
   renderSlots();
@@ -170,6 +192,7 @@ function playSlot(index) {
     cameraSnapshot.width = cameraPlayer.videoWidth;
     cameraSnapshot.height = cameraPlayer.videoHeight;
     cameraSnapshot.getContext('2d')?.drawImage(cameraPlayer, 0, 0, cameraSnapshot.width, cameraSnapshot.height);
+    hasSnapshot = true;
   }
   playerElements.forEach((item, itemIndex) => {
     if (itemIndex !== index && item) {
@@ -192,7 +215,7 @@ function playSlot(index) {
   const generation = playbackGeneration;
   player.play().then(() => {
     if (generation !== playbackGeneration) return;
-    if (video.resultUrl && video.playDuration) {
+    if (video.report && video.playDuration) {
       const started = performance.now();
       processingStatus.hidden = false;
       processingTime.textContent = `${video.playDuration} sec`;
@@ -258,7 +281,7 @@ function createPlayer(video, index) {
   player.disablePictureInPicture = true;
   player.controls = false;
   player.className = 'player';
-  player.loop = Boolean(video.resultUrl && video.playDuration);
+  player.loop = Boolean(video.report && video.playDuration);
   player.setAttribute('controlslist', 'nodownload noplaybackrate nofullscreen');
   player.addEventListener('ended', () => enterBlackout());
   player.addEventListener('error', () => showNotice('This browser cannot play that video format.'));
@@ -402,6 +425,16 @@ window.addEventListener('keydown', (event) => {
   if (number >= 1 && number <= MAX_VIDEOS) {
     event.preventDefault();
     playSlot(number - 1);
+  }
+});
+
+document.querySelector('#previewReport').addEventListener('click', () => {
+  if (!latestReport) return;
+  try {
+    sessionStorage.setItem('diamond-report-preview', JSON.stringify(latestReport));
+    window.open('report.html', '_blank');
+  } catch {
+    showNotice('Unable to open the report. Please allow browser storage and popups for this site.');
   }
 });
 

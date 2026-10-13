@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>DRC DS - Report Preview</title><link rel="stylesheet" href="report.css"></head>
+<body>
+  <nav class="actions"><strong>REPORT PREVIEW</strong><button id="print">Print / Save PDF</button></nav>
+  <p id="error" hidden>No report is available. Complete an analysis and open its report preview.</p>
+  <article id="sheet" class="sheet">
+    <header><img src="drc-logo-clean.png" alt="DRC DS"><dl><dt>DATE</dt><dd id="date"></dd><dt>TIME</dt><dd id="time"></dd></dl></header>
+    <h1>ANALYSIS REPORT</h1>
+    <section class="details"><div><h2>ANALYSIS DETAILS</h2><ol id="findings"></ol></div><aside><h2 id="grade"></h2><span class="caption">GRADE / STATUS</span><div class="bars" id="bars"></div><figure><img id="photo" alt="Captured sample"><figcaption id="photoCaption">SAMPLE PHOTO</figcaption></figure></aside></section>
+    <fieldset><legend>FINAL RESULT</legend><h2 id="result"></h2></fieldset>
+    <footer><div>AUTHORIZED SIGNATORY<span class="signature"></span></div><div>CERTIFICATE NO.<span class="signature"></span></div></footer>
+  </article>
+  <script src="report.js"></script>
+</body></html>
