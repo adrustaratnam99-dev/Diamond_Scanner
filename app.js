@@ -495,19 +495,6 @@ document.querySelector('#previewReport').addEventListener('click', () => {
 
 document.querySelector('#closeReport').addEventListener('click', () => document.querySelector('#reportDialog').close());
 
-document.addEventListener('fullscreenchange', () => {
-  if (!document.fullscreenElement) {
-    stopPlayers(false);
-    resetAnalysisPresentation();
-    state.activeIndex = null;
-    state.blackout = false;
-    state.cameraActive = false;
-    cameraPlayer.classList.remove('camera-active');
-    emptyStage.hidden = false;
-    renderSlots();
-  }
-});
-
 (async function initialize() {
   let stored = [];
   try {
