@@ -31,6 +31,7 @@
       </header>
 
       <section id="stage" class="stage" aria-label="Video stage">
+        <dialog id="reportDialog" aria-label="Report preview"><button id="closeReport" aria-label="Close report">Close report</button><iframe id="reportEmbed" title="Printable analysis report"></iframe></dialog>
         <video id="cameraPlayer" class="camera-player" autoplay muted playsinline aria-label="Live device camera"></video>
         <div id="analysisHeader" class="analysis-header" hidden>
           <div class="analysis-logo-panel">
@@ -38,7 +39,6 @@
           </div>
           <div id="snapshotFrame" class="snapshot-frame">
             <canvas id="cameraSnapshot" class="camera-snapshot" aria-label="Last camera frame"></canvas>
-            <span class="scan-diamond" aria-hidden="true"></span>
           </div>
         </div>
         <div id="players" class="players"></div>
@@ -59,20 +59,21 @@
           <button id="emptyAddButton" class="primary-button">Choose videos</button>
         </div>
         <div id="controlPad" class="control-pad" hidden aria-label="On-screen keyboard">
-          <button data-key="0" aria-label="Logo screen">0<span>LOGO</span></button>
+          <button data-key="0">0</button>
           <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button><button data-key="4">4</button>
           <button data-key="5">5</button><button data-key="6">6</button><button data-key="7">7</button><button data-key="8">8</button>
-          <button data-key="9" aria-label="Live camera">9<span>CAM</span></button>
+          <button data-key="9">9</button>
+          <button data-key="Backspace" aria-label="Backspace">&#9003;</button><button data-key="Escape">CLEAR</button><button data-key="Enter">START</button><button data-key="c">CAMERA</button><button data-key="l">LOGO</button>
         </div>
       </section>
 
-      <section class="library" aria-label="Video slots">
+      <details class="library"><summary>Categories</summary><section aria-label="Video slots">
         <div class="library-heading">
-          <div><span>VIDEO SLOTS</span><strong id="videoCount">0 / 8</strong></div>
-          <div class="keyboard-hint"><kbd>0</kbd> LOGO <kbd>1-8</kbd> VIDEO <kbd>9</kbd> CAMERA</div>
+          <div><span>CATEGORIES</span><strong id="videoCount">0 / 40</strong></div>
+          <div class="keyboard-hint"><kbd>L</kbd> LOGO <kbd>CODE + ENTER</kbd> PLAY <kbd>C</kbd> CAMERA</div>
         </div>
         <div id="slots" class="slots"></div>
-      </section>
+      </section></details>
       <button id="notice" class="notice" hidden aria-label="Dismiss message"><span id="noticeText"></span><b>×</b></button>
     </main>
     <script src="app.js"></script>

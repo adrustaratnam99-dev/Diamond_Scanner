@@ -216,6 +216,15 @@
 }
 
 .analysis-header[hidden], .analysis-result[hidden] { display: none; }
+#reportDialog { width: min(900px, 96vw); height: 94dvh; max-height: 94dvh; border: 1px solid #69736e; padding: 0; background: #e6e9e9; cursor: auto; }
+#reportDialog::backdrop { background: rgb(0 0 0 / 75%); }
+#closeReport { display: block; margin: 8px 12px 8px auto; padding: 8px 14px; cursor: pointer; }
+#reportEmbed { width: 100%; height: calc(100% - 54px); border: 0; }
+.library > summary { cursor: pointer; font-size: 12px; color: #b8c1b7; }
+.library[open] > summary { margin-bottom: 16px; }
+.slots { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); }
+.slot-number { width: 34px; }
+.control-pad button { font-size: 11px; }
 .empty-stage { position: absolute; inset: 0; padding: 0; background: #020302; }
 .empty-stage > :not(.standby-logo) { display: none; }
 .standby-logo { width: 100%; height: 100%; object-fit: contain; }

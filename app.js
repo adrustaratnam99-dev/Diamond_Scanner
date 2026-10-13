@@ -1,6 +1,6 @@
 const DB_NAME = 'cutboard-local-videos';
 const STORE_NAME = 'videos';
-const MAX_VIDEOS = 8;
+const MAX_VIDEOS = 40;
 const BUILTIN_VIDEOS = [{
   id: 'diamond-analysis-preset',
   name: 'Diamond Analysis',
@@ -40,6 +40,31 @@ const BUILTIN_VIDEOS = [{
   builtin: true,
   report: { findings: ['VEILED', 'UNCERTAIN INCLUSIONS', 'NOT PURIFIED', 'AMBIGUOUS'], grade: 'NOT DETECTED', result: 'NOT DETECTED', tone: 'undetected' },
 }];
+
+BUILTIN_VIDEOS.forEach((video, index) => { video.code = String(index + 1).padStart(3, '0'); });
+['PEARL', 'CORAL', 'RUBY', 'YELLOW SAPPHIRE', 'HESSONITE', 'BLUE SAPPHIRE', 'LEHSUNIA'].forEach((gem, group) => {
+  ['NATURAL', 'SYNTHETIC', 'SEMI'].forEach((type, variant) => {
+    const template = BUILTIN_VIDEOS[variant];
+    const code = `${group + 1}1${variant + 1}`;
+    BUILTIN_VIDEOS.push({ ...template, id: `category-${code}`, code, name: `${type} ${gem}`, report: { ...template.report, findings: [...template.report.findings], result: `${type} ${gem}` } });
+  });
+});
+let codeBuffer = '';
+
+function handleControlKey(key) {
+  if (key === '9' && !codeBuffer) { showCamera(); return; }
+  if (key === 'Enter' && codeBuffer === '0') { codeBuffer = ''; enterBlackout(); return; }
+  if (/^[0-9]$/.test(key)) {
+    if (codeBuffer.length < 3) codeBuffer += key;
+  } else if (key === 'Backspace') codeBuffer = codeBuffer.slice(0, -1);
+  else if (key === 'Escape') codeBuffer = '';
+  else if (key === 'Enter') {
+    const index = codeBuffer.length === 3 ? state.videos.findIndex((video) => video.code === codeBuffer) : -1;
+    codeBuffer = '';
+    if (index >= 0) playSlot(index);
+  } else if (key.toLowerCase() === 'c') { codeBuffer = ''; showCamera(); }
+  else if (key.toLowerCase() === 'l') { codeBuffer = ''; enterBlackout(); }
+}
 
 const state = { videos: [], activeIndex: null, blackout: false, cameraActive: false, cameraReady: false, cameraStream: null };
 const playerElements = [];
@@ -182,18 +207,63 @@ function enterBlackout() {
   renderSlots();
 }
 
-function playSlot(index) {
-  const video = state.videos[index];
-  const player = playerElements[index];
-  if (!video || !player) return;
-  resetAnalysisPresentation();
-  requestFullscreen();
-  if (state.cameraActive && cameraPlayer.videoWidth && cameraPlayer.videoHeight) {
+async function captureFreshSnapshot(generation) {
+  hasSnapshot = false;
+  const context = cameraSnapshot.getContext('2d');
+  context?.clearRect(0, 0, cameraSnapshot.width, cameraSnapshot.height);
+  const isLive = () => state.cameraStream?.getVideoTracks().some((track) => track.readyState === 'live' && !track.muted);
+  if (!context || !isLive()) return;
+  try {
+    await cameraPlayer.play();
+    // Wait for newly delivered frames, never copy the hidden player's cached frame.
+    const fresh = await new Promise((resolve) => {
+      let frameId;
+      let poll;
+      let frames = 0;
+      const initialTime = cameraPlayer.currentTime;
+      const finish = (result) => {
+        clearTimeout(timeout);
+        clearInterval(poll);
+        if (frameId !== undefined) cameraPlayer.cancelVideoFrameCallback(frameId);
+        resolve(result);
+      };
+      const timeout = setTimeout(() => finish(false), 1500);
+      if (cameraPlayer.requestVideoFrameCallback) {
+        const nextFrame = () => {
+          if (++frames >= 2) finish(true);
+          else frameId = cameraPlayer.requestVideoFrameCallback(nextFrame);
+        };
+        frameId = cameraPlayer.requestVideoFrameCallback(nextFrame);
+      } else {
+        poll = setInterval(() => {
+          if (cameraPlayer.currentTime > initialTime && cameraPlayer.readyState >= 2) finish(true);
+        }, 30);
+      }
+    });
+    if (generation !== playbackGeneration) return;
+    if (!fresh || !isLive() || !cameraPlayer.videoWidth || !cameraPlayer.videoHeight) {
+      showNotice('No fresh camera photo available. Press 9 to reconnect the camera.');
+      return;
+    }
     cameraSnapshot.width = cameraPlayer.videoWidth;
     cameraSnapshot.height = cameraPlayer.videoHeight;
-    cameraSnapshot.getContext('2d')?.drawImage(cameraPlayer, 0, 0, cameraSnapshot.width, cameraSnapshot.height);
+    context.drawImage(cameraPlayer, 0, 0, cameraSnapshot.width, cameraSnapshot.height);
     hasSnapshot = true;
+  } catch {
+    if (generation === playbackGeneration) showNotice('Camera photo unavailable. Press 9 to reconnect the camera.');
   }
+}
+
+function playSlot(index) {
+  const video = state.videos[index];
+  if (!video) return;
+  let player = playerElements[index];
+  if (!player) { player = createPlayer(video, index); players.append(player); }
+  codeBuffer = '';
+  controlPad.hidden = true;
+  resetAnalysisPresentation();
+  requestFullscreen();
+  captureFreshSnapshot(playbackGeneration);
   playerElements.forEach((item, itemIndex) => {
     if (itemIndex !== index && item) {
       item.pause();
@@ -290,9 +360,9 @@ function createPlayer(video, index) {
 }
 
 function renderPlayers() {
+  stopPlayers();
   players.replaceChildren();
   playerElements.length = 0;
-  state.videos.forEach((video, index) => players.append(createPlayer(video, index)));
 }
 
 function makeElement(tag, className, text) {
@@ -309,12 +379,8 @@ function renderSlots() {
   emptyTitle.textContent = state.videos.length ? 'Choose a video slot' : 'Load your first set';
   emptyCopy.textContent = state.videos.length ? 'Your videos are ready below.' : 'Select up to eight videos from this device.';
   emptyAddButton.hidden = state.videos.length > 0;
-  controlPad.querySelectorAll('button[data-key]').forEach((button) => {
-    const number = Number(button.dataset.key);
-    if (number >= 1 && number <= MAX_VIDEOS) button.disabled = !state.videos[number - 1];
-  });
 
-  for (let index = 0; index < MAX_VIDEOS; index += 1) {
+  for (let index = 0; index < state.videos.length; index += 1) {
     const video = state.videos[index];
     if (!video) {
       const empty = makeElement('button', 'slot-card empty');
@@ -331,7 +397,7 @@ function renderSlots() {
     preview.append(makeElement('span', 'play-glyph', '▶'));
     const copy = makeElement('span', 'slot-copy');
     copy.append(makeElement('strong', '', video.name), makeElement('small', '', video.builtin ? '30 SEC ANALYSIS' : readableSize(video.size)));
-    playButton.append(makeElement('span', 'slot-number', String(index + 1)), preview, copy);
+    playButton.append(makeElement('span', 'slot-number', video.code), preview, copy);
     playButton.addEventListener('click', () => playSlot(index));
 
     card.append(playButton);
@@ -359,6 +425,7 @@ async function addVideos(files) {
     size: file.size,
     blob: file,
     order: storedCount + index,
+    code: String(801 + storedCount + index),
     url: URL.createObjectURL(file),
   }));
   state.videos.push(...additions);
@@ -403,28 +470,15 @@ controlPad.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-key]');
   if (!button || button.disabled) return;
   const key = button.dataset.key;
-  if (key === '0') enterBlackout();
-  else if (key === '9') showCamera();
-  else playSlot(Number(key) - 1);
+  handleControlKey(key);
 });
 notice.addEventListener('click', () => { notice.hidden = true; });
 
 window.addEventListener('keydown', (event) => {
-  if (event.target.matches('input, textarea')) return;
-  if (event.key === '0') {
+  if (event.target.matches('input, textarea, select, [contenteditable="true"]') || event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
+  if (/^[0-9cClL]$/.test(event.key) || ['Enter', 'Backspace', 'Escape'].includes(event.key)) {
     event.preventDefault();
-    enterBlackout();
-    return;
-  }
-  if (event.key === '9') {
-    event.preventDefault();
-    showCamera();
-    return;
-  }
-  const number = Number(event.key);
-  if (number >= 1 && number <= MAX_VIDEOS) {
-    event.preventDefault();
-    playSlot(number - 1);
+    handleControlKey(event.key);
   }
 });
 
@@ -432,11 +486,14 @@ document.querySelector('#previewReport').addEventListener('click', () => {
   if (!latestReport) return;
   try {
     sessionStorage.setItem('diamond-report-preview', JSON.stringify(latestReport));
-    window.open('report.html', '_blank');
+    document.querySelector('#reportEmbed').src = 'report.html';
+    document.querySelector('#reportDialog').showModal();
   } catch {
-    showNotice('Unable to open the report. Please allow browser storage and popups for this site.');
+    showNotice('Unable to open the report. Please allow browser storage for this site.');
   }
 });
+
+document.querySelector('#closeReport').addEventListener('click', () => document.querySelector('#reportDialog').close());
 
 document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement) {
@@ -460,7 +517,7 @@ document.addEventListener('fullscreenchange', () => {
   }
   state.videos = [
     ...BUILTIN_VIDEOS,
-    ...stored.slice(0, MAX_VIDEOS - BUILTIN_VIDEOS.length).map((video) => ({ ...video, url: URL.createObjectURL(video.blob) })),
+    ...stored.slice(0, MAX_VIDEOS - BUILTIN_VIDEOS.length).map((video, index) => ({ ...video, code: String(801 + index), url: URL.createObjectURL(video.blob) })),
   ];
   renderPlayers();
   renderSlots();
