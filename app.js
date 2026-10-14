@@ -49,7 +49,9 @@ BUILTIN_VIDEOS.forEach((video, index) => { video.code = String(index + 1).padSta
     BUILTIN_VIDEOS.push({ ...template, id: `category-${code}`, code, name: `${type} ${gem}`, report: { ...template.report, findings: [...template.report.findings], result: `${type} ${gem}` } });
   });
 });
+BUILTIN_VIDEOS[0].report.findings[0] = 'NATURAL MIXTURES';
 let codeBuffer = '';
+let keypadPreferred = true;
 
 function handleControlKey(key) {
   if (key === '9' && !codeBuffer) { showCamera(); return; }
@@ -100,6 +102,22 @@ new ResizeObserver(() => {
 }).observe(players);
 const keypadButton = document.querySelector('#keypadButton');
 const controlPad = document.querySelector('#controlPad');
+const stageKeypadButton = document.querySelector('#stageKeypadButton');
+const reportDialog = document.querySelector('#reportDialog');
+
+function setKeypadVisible(visible) {
+  controlPad.hidden = !visible;
+  [keypadButton, stageKeypadButton].forEach((button) => {
+    button.classList.toggle('active', visible);
+    button.setAttribute('aria-pressed', String(visible));
+  });
+}
+
+function showIdleKeypad() {
+  stageKeypadButton.hidden = false;
+  keypadPreferred = true;
+  setKeypadVisible(true);
+}
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -195,6 +213,9 @@ function showAnalysisResult(index, video) {
 }
 
 function enterBlackout() {
+  if (reportDialog.open) reportDialog.close();
+  codeBuffer = '';
+  latestReport = null;
   stopPlayers();
   resetAnalysisPresentation();
   state.activeIndex = null;
@@ -203,6 +224,7 @@ function enterBlackout() {
   cameraPlayer.classList.remove('camera-active');
   emptyStage.hidden = false;
   playerElements.forEach((player) => player.classList.remove('player-active'));
+  showIdleKeypad();
   requestFullscreen();
   renderSlots();
 }
@@ -260,7 +282,8 @@ function playSlot(index) {
   let player = playerElements[index];
   if (!player) { player = createPlayer(video, index); players.append(player); }
   codeBuffer = '';
-  controlPad.hidden = true;
+  setKeypadVisible(false);
+  stageKeypadButton.hidden = true;
   resetAnalysisPresentation();
   requestFullscreen();
   captureFreshSnapshot(playbackGeneration);
@@ -308,6 +331,8 @@ async function showCamera() {
   resetAnalysisPresentation();
   state.activeIndex = null;
   state.blackout = false;
+  codeBuffer = '';
+  showIdleKeypad();
   emptyStage.hidden = true;
   playerElements.forEach((player) => player.classList.remove('player-active'));
 
@@ -461,11 +486,12 @@ addButton.addEventListener('click', () => fileInput.click());
 emptyAddButton.addEventListener('click', () => fileInput.click());
 document.querySelector('#blackoutButton').addEventListener('click', enterBlackout);
 cameraButton.addEventListener('click', showCamera);
-keypadButton.addEventListener('click', () => {
-  controlPad.hidden = !controlPad.hidden;
-  keypadButton.classList.toggle('active', !controlPad.hidden);
-  keypadButton.setAttribute('aria-pressed', String(!controlPad.hidden));
-});
+[keypadButton, stageKeypadButton].forEach((button) => button.addEventListener('click', () => {
+  keypadPreferred = controlPad.hidden;
+  setKeypadVisible(keypadPreferred);
+}));
+showIdleKeypad();
+document.querySelector('#resultHome').addEventListener('click', enterBlackout);
 controlPad.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-key]');
   if (!button || button.disabled) return;
@@ -475,6 +501,7 @@ controlPad.addEventListener('click', (event) => {
 notice.addEventListener('click', () => { notice.hidden = true; });
 
 window.addEventListener('keydown', (event) => {
+  if (reportDialog.open) return;
   if (event.target.matches('input, textarea, select, [contenteditable="true"]') || event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
   if (/^[0-9cClL]$/.test(event.key) || ['Enter', 'Backspace', 'Escape'].includes(event.key)) {
     event.preventDefault();
@@ -486,7 +513,7 @@ document.querySelector('#previewReport').addEventListener('click', () => {
   if (!latestReport) return;
   try {
     sessionStorage.setItem('diamond-report-preview', JSON.stringify(latestReport));
-    document.querySelector('#reportEmbed').src = 'report.html';
+    document.querySelector('#reportEmbed').src = 'report.html?v=20261014-1';
     document.querySelector('#reportDialog').showModal();
   } catch {
     showNotice('Unable to open the report. Please allow browser storage for this site.');
@@ -494,6 +521,11 @@ document.querySelector('#previewReport').addEventListener('click', () => {
 });
 
 document.querySelector('#closeReport').addEventListener('click', () => document.querySelector('#reportDialog').close());
+
+window.addEventListener('message', (event) => {
+  if (event.origin !== window.location.origin || event.source !== document.querySelector('#reportEmbed').contentWindow) return;
+  if (event.data?.type === 'scanner-home') enterBlackout();
+});
 
 (async function initialize() {
   let stored = [];

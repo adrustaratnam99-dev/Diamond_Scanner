@@ -1,4 +1,8 @@
 const sheet = document.querySelector('#sheet');
+document.querySelector('#reportHome').addEventListener('click', () => {
+  if (window.parent !== window) window.parent.postMessage({ type: 'scanner-home' }, window.location.origin);
+  else window.location.replace('./');
+});
 let report;
 try { report = JSON.parse(sessionStorage.getItem('diamond-report-preview')); } catch {}
 if (!report?.completedAt || !Array.isArray(report.findings)) {

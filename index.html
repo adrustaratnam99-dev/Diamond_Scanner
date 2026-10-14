@@ -10,8 +10,8 @@
     <meta property="og:image" content="og.png">
     <title>Cutboard - Instant Video Switcher</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="style.css?v=20261013-2">
-    <link rel="stylesheet" href="camera.css?v=20261013-2">
+    <link rel="stylesheet" href="style.css?v=20261014-1">
+    <link rel="stylesheet" href="camera.css?v=20261014-1">
   </head>
   <body>
     <main class="app-shell">
@@ -44,7 +44,7 @@
         <div id="players" class="players"></div>
         <div id="processingStatus" class="processing-status" hidden><span>Processing</span><strong id="processingTime">30 sec</strong><progress id="processingProgress" max="30" value="0" aria-label="Processing progress"></progress></div>
         <div id="resultFrame" class="analysis-result" hidden>
-          <button id="previewReport" class="report-preview-button">Preview / Print Report</button>
+          <div class="result-actions"><button id="resultHome" class="report-preview-button">Home</button><button id="previewReport" class="report-preview-button">Preview / Print Report</button></div>
           <div class="report-body">
             <ol class="report-findings"><li>Natural</li><li>Revitalized</li><li>Highly Purified</li><li>Safe</li></ol>
             <div class="report-graph"><span>Excellent</span><div class="report-bar" role="img" aria-label="Excellent: full green bar"></div></div>
@@ -58,7 +58,8 @@
           <p id="emptyCopy">Select up to eight videos from this device.</p>
           <button id="emptyAddButton" class="primary-button">Choose videos</button>
         </div>
-        <div id="controlPad" class="control-pad" hidden aria-label="On-screen keyboard">
+        <button id="stageKeypadButton" class="keypad-button stage-keypad-button active" aria-label="Toggle keyboard" title="Toggle keyboard" aria-pressed="true"><span aria-hidden="true">#</span></button>
+        <div id="controlPad" class="control-pad" aria-label="On-screen keyboard">
           <button data-key="0">0</button>
           <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button><button data-key="4">4</button>
           <button data-key="5">5</button><button data-key="6">6</button><button data-key="7">7</button><button data-key="8">8</button>
@@ -76,6 +77,6 @@
       </section></details>
       <button id="notice" class="notice" hidden aria-label="Dismiss message"><span id="noticeText"></span><b>×</b></button>
     </main>
-    <script src="app.js?v=20261013-2"></script>
+    <script src="app.js?v=20261014-1"></script>
   </body>
 </html>
