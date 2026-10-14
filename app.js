@@ -52,39 +52,19 @@ BUILTIN_VIDEOS.forEach((video, index) => { video.code = String(index + 1).padSta
 BUILTIN_VIDEOS[0].report.findings[0] = 'NATURAL MIXTURES';
 let codeBuffer = '';
 let keypadPreferred = true;
-let nineKeyTimer = null;
-
-function clearNineKeyTimer() {
-  window.clearTimeout(nineKeyTimer);
-  nineKeyTimer = null;
-}
 
 function handleControlKey(key) {
-  if (key === '9' && !codeBuffer) {
-    codeBuffer = '9';
-    clearNineKeyTimer();
-    nineKeyTimer = window.setTimeout(() => {
-      if (codeBuffer === '9') {
-        codeBuffer = '';
-        showCamera();
-      }
-    }, 700);
-    return;
-  }
   if (key === 'Enter' && codeBuffer === '0') { codeBuffer = ''; enterBlackout(); return; }
   if (/^[0-9]$/.test(key)) {
-    clearNineKeyTimer();
     if (codeBuffer.length < 3) codeBuffer += key;
-  } else if (key === 'Backspace') { clearNineKeyTimer(); codeBuffer = codeBuffer.slice(0, -1); }
-  else if (key === 'Escape') { clearNineKeyTimer(); codeBuffer = ''; }
+  } else if (key === 'Backspace') { codeBuffer = codeBuffer.slice(0, -1); }
+  else if (key === 'Escape') { codeBuffer = ''; }
   else if (key === 'Enter') {
-    clearNineKeyTimer();
-    if (codeBuffer === '9') { codeBuffer = ''; showCamera(); return; }
     const index = codeBuffer.length === 3 ? state.videos.findIndex((video) => video.code === codeBuffer) : -1;
     codeBuffer = '';
     if (index >= 0) playSlot(index);
-  } else if (key.toLowerCase() === 'c') { clearNineKeyTimer(); codeBuffer = ''; showCamera(); }
-  else if (key.toLowerCase() === 'l') { clearNineKeyTimer(); codeBuffer = ''; enterBlackout(); }
+  } else if (key.toLowerCase() === 'c') { codeBuffer = ''; showCamera(); }
+  else if (key.toLowerCase() === 'l') { codeBuffer = ''; enterBlackout(); }
 }
 
 const state = { videos: [], activeIndex: null, blackout: true, cameraActive: false, cameraReady: false, cameraStream: null };
@@ -232,7 +212,6 @@ function showAnalysisResult(index, video) {
 }
 
 function enterBlackout() {
-  clearNineKeyTimer();
   if (reportDialog.open) reportDialog.close();
   codeBuffer = '';
   latestReport = null;
@@ -348,7 +327,6 @@ function playSlot(index) {
 }
 
 async function showCamera() {
-  clearNineKeyTimer();
   requestFullscreen();
   stopPlayers();
   resetAnalysisPresentation();
