@@ -192,6 +192,9 @@
 
 .control-pad { position: absolute; z-index: 8; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(480px, calc(100% - 24px)); display: grid; grid-template-columns: repeat(5, minmax(44px, 1fr)); gap: 6px; padding: 8px; border: 1px solid rgb(155 198 53 / 55%); border-radius: 4px; background: rgb(8 11 7 / 90%); box-shadow: 0 8px 26px rgb(0 0 0 / 55%); touch-action: manipulation; }
 .control-pad[hidden] { display: none; }
+.control-pad button[hidden] { display: none; }
+.alphabet-toggle { position: absolute; z-index: 9; left: calc(50% + min(240px, 50% - 12px) + 8px); bottom: 14px; width: 46px; height: 40px; padding: 0; border: 1px solid #3e4930; border-radius: 3px; background: #181d14; color: #e7f5c8; font: 800 12px monospace; cursor: pointer; }
+.alphabet-toggle[aria-pressed="true"] { background: var(--lime); color: #111; }
 .control-pad button { height: 48px; border: 1px solid #3e4930; border-radius: 3px; background: #181d14; color: #e7f5c8; font: 800 15px monospace; cursor: pointer; }
 .control-pad button:active { background: var(--lime); color: #111; }
 .control-pad button:disabled { opacity: .28; cursor: default; }
@@ -360,6 +363,7 @@
   .scanner-standby { padding-bottom: 60px; }
   .control-pad { bottom: 8px; gap: 4px; padding: 6px; }
   .control-pad button { height: 44px; }
+  .alphabet-toggle { left: auto; right: 10px; bottom: 158px; }
   .library { padding-left: 12px; padding-right: 12px; }
 }
 

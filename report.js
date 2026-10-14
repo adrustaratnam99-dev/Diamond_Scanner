@@ -10,6 +10,7 @@ if (!report?.completedAt || !Array.isArray(report.findings)) {
   document.querySelector('#error').hidden = false;
   document.querySelector('#print').disabled = true;
   document.querySelector('#downloadPdf').disabled = true;
+  document.querySelector('#shareWhatsapp').disabled = true;
 } else {
   const completed = new Date(report.completedAt);
   const put = (id, value) => { document.getElementById(id).textContent = value; };
@@ -24,9 +25,7 @@ if (!report?.completedAt || !Array.isArray(report.findings)) {
   if (report.photo) document.querySelector('#photo').src = report.photo;
   else { document.querySelector('#photo').hidden = true; put('photoCaption', 'NO SAMPLE PHOTO CAPTURED'); }
   document.querySelector('#print').addEventListener('click', () => window.print());
-  document.querySelector('#downloadPdf').addEventListener('click', async (event) => {
-    const button = event.currentTarget;
-    button.disabled = true;
+  async function generatePdf() {
     try {
       const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
       const logo = document.querySelector('header img');
@@ -66,9 +65,29 @@ if (!report?.completedAt || !Array.isArray(report.findings)) {
       pdf.setFontSize(18); pdf.text(report.result, 105, 230, { align: 'center', maxWidth: 172 });
       pdf.setTextColor('#172024'); pdf.setFontSize(9); pdf.text('AUTHORIZED SIGNATORY', 18, 258);
       pdf.setDrawColor('#6b7672'); pdf.line(18, 275, 91, 275);
-      pdf.save(`${report.result.replaceAll(' ', '-')}.pdf`);
-    } catch {
-      button.textContent = 'Retry PDF download';
-    } finally { button.disabled = false; }
+      return pdf.output('blob');
+    } catch { return null; }
+  }
+  const downloadPdf = document.querySelector('#downloadPdf');
+  const shareWhatsapp = document.querySelector('#shareWhatsapp');
+  downloadPdf.addEventListener('click', async () => {
+    downloadPdf.disabled = true;
+    const blob = await generatePdf();
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a'); link.href = url; link.download = `${report.result.replaceAll(' ', '-')}.pdf`; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else downloadPdf.textContent = 'Retry PDF download';
+    downloadPdf.disabled = false;
+  });
+  shareWhatsapp.addEventListener('click', async () => {
+    shareWhatsapp.disabled = true;
+    const blob = await generatePdf();
+    const file = blob && new File([blob], `${report.result.replaceAll(' ', '-')}.pdf`, { type: 'application/pdf' });
+    if (file && navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try { await navigator.share({ files: [file], title: report.result, text: 'Diamond analysis report' }); }
+      catch (error) { if (error.name !== 'AbortError') shareWhatsapp.textContent = 'Share unavailable'; }
+    } else shareWhatsapp.textContent = 'Use Download PDF';
+    shareWhatsapp.disabled = false;
   });
 }

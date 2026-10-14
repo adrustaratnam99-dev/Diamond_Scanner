@@ -41,12 +41,12 @@ const BUILTIN_VIDEOS = [{
   report: { findings: ['VEILED', 'UNCERTAIN INCLUSIONS', 'NOT PURIFIED', 'AMBIGUOUS'], grade: 'NOT DETECTED', result: 'NOT DETECTED', tone: 'undetected' },
 }];
 
-BUILTIN_VIDEOS.forEach((video, index) => { video.code = String(index + 1).padStart(3, '0'); });
+['A', 'B', 'C', 'D'].forEach((code, index) => { BUILTIN_VIDEOS[index].code = code; });
 ['EMERALD', 'DIAMOND', 'PEARL', 'YELLOW SAPPHIRE', 'RUBY', 'CORAL', 'CAT EYE', 'BLUE SAPPHIRE', 'HESSONITE'].forEach((gem, group) => {
   ['NATURAL', 'SYNTHETIC', 'SEMI'].forEach((type, variant) => {
     const template = BUILTIN_VIDEOS[variant];
-    const code = `${group + 1}1${variant + 1}`;
-    BUILTIN_VIDEOS.push({ ...template, id: `category-${code}`, code, name: `${type} ${gem}`, report: { ...template.report, findings: [...template.report.findings], result: `${type} ${gem}` } });
+    const code = `${group + 1}${variant + 1}`;
+    BUILTIN_VIDEOS.push({ ...template, id: `category-${code}`, code, name: `${type} ${gem}`, playDuration: 180, report: { ...template.report, findings: [...template.report.findings], result: `${type} ${gem}` } });
   });
 });
 BUILTIN_VIDEOS[0].report.findings[0] = 'NATURAL MIXTURES';
@@ -55,16 +55,17 @@ let keypadPreferred = true;
 
 function handleControlKey(key) {
   if (key === 'Enter' && codeBuffer === '0') { codeBuffer = ''; enterBlackout(); return; }
-  if (/^[0-9]$/.test(key)) {
-    if (codeBuffer.length < 3) codeBuffer += key;
+  const normalizedKey = typeof key === 'string' ? key.toUpperCase() : key;
+  if (/^[0-9A-D]$/.test(normalizedKey)) {
+    if (codeBuffer.length < 2) codeBuffer += normalizedKey;
   } else if (key === 'Backspace') { codeBuffer = codeBuffer.slice(0, -1); }
   else if (key === 'Escape') { codeBuffer = ''; }
   else if (key === 'Enter') {
-    const index = codeBuffer.length === 3 ? state.videos.findIndex((video) => video.code === codeBuffer) : -1;
+    const index = codeBuffer.length >= 1 ? state.videos.findIndex((video) => video.code === codeBuffer) : -1;
     codeBuffer = '';
     if (index >= 0) playSlot(index);
-  } else if (key.toLowerCase() === 'c') { codeBuffer = ''; showCamera(); }
-  else if (key.toLowerCase() === 'l') { codeBuffer = ''; enterBlackout(); }
+  } else if (key === 'CAMERA') { codeBuffer = ''; showCamera(); }
+  else if (key === 'LOGO' || key.toLowerCase() === 'l') { codeBuffer = ''; enterBlackout(); }
 }
 
 const state = { videos: [], activeIndex: null, blackout: true, cameraActive: false, cameraReady: false, cameraStream: null };
@@ -78,6 +79,23 @@ const processingStatus = document.querySelector('#processingStatus');
 const processingTime = document.querySelector('#processingTime');
 const processingProgress = document.querySelector('#processingProgress');
 const stage = document.querySelector('#stage');
+const cameraZoomControl = document.querySelector('#cameraZoomControl');
+const cameraZoom = document.querySelector('#cameraZoom');
+const alphabetToggle = document.querySelector('#alphabetToggle');
+
+function updateCameraZoom() {
+  const track = state.cameraStream?.getVideoTracks()[0];
+  const capabilities = track?.getCapabilities?.();
+  if (!capabilities?.zoom) {
+    cameraZoomControl.hidden = true;
+    return;
+  }
+  cameraZoom.min = capabilities.zoom.min;
+  cameraZoom.max = capabilities.zoom.max;
+  cameraZoom.step = capabilities.zoom.step || 0.1;
+  cameraZoom.value = track.getSettings?.().zoom ?? capabilities.zoom.min;
+  cameraZoomControl.hidden = false;
+}
 const players = document.querySelector('#players');
 const slots = document.querySelector('#slots');
 const fileInput = document.querySelector('#fileInput');
@@ -114,8 +132,13 @@ function setKeypadVisible(visible) {
 
 function showIdleKeypad() {
   stageKeypadButton.hidden = false;
+  alphabetToggle.hidden = false;
   keypadPreferred = true;
   setKeypadVisible(true);
+  alphabetToggle.setAttribute('aria-pressed', 'false');
+  alphabetToggle.textContent = 'ABC';
+  controlPad.querySelectorAll('.number-key').forEach((key) => { key.hidden = false; });
+  controlPad.querySelectorAll('.alphabet-key').forEach((letter) => { letter.hidden = true; });
 }
 
 function openDatabase() {
@@ -284,6 +307,7 @@ function playSlot(index) {
   codeBuffer = '';
   setKeypadVisible(false);
   stageKeypadButton.hidden = true;
+  alphabetToggle.hidden = true;
   resetAnalysisPresentation();
   requestFullscreen();
   captureFreshSnapshot(playbackGeneration);
@@ -350,6 +374,7 @@ async function showCamera() {
         video: { facingMode: { ideal: 'environment' } },
         audio: false,
       });
+      updateCameraZoom();
       cameraPlayer.srcObject = state.cameraStream;
       state.cameraReady = true;
       cameraButton.classList.add('ready');
@@ -361,7 +386,7 @@ async function showCamera() {
   } catch (error) {
     cameraButtonText.textContent = state.cameraReady ? 'Live camera' : 'Enable camera';
     if (error instanceof DOMException && error.name === 'NotAllowedError') {
-      showNotice('Camera permission was not allowed. Enable it in the browser and press 9 again.');
+      showNotice('Camera permission was not allowed. Enable it in the browser and press CAMERA again.');
     } else {
       showNotice('The camera could not be started on this device.');
     }
@@ -488,12 +513,24 @@ addButton.addEventListener('click', () => fileInput.click());
 emptyAddButton.addEventListener('click', () => fileInput.click());
 document.querySelector('#blackoutButton').addEventListener('click', requestFullscreen);
 cameraButton.addEventListener('click', showCamera);
+cameraZoom.addEventListener('input', async () => {
+  const track = state.cameraStream?.getVideoTracks()[0];
+  if (!track) return;
+  try { await track.applyConstraints({ advanced: [{ zoom: Number(cameraZoom.value) }] }); } catch { showNotice('Zoom is not supported by this camera.'); }
+});
 [keypadButton, stageKeypadButton].forEach((button) => button.addEventListener('click', () => {
   keypadPreferred = controlPad.hidden;
   setKeypadVisible(keypadPreferred);
 }));
 showIdleKeypad();
 document.querySelector('#resultHome').addEventListener('click', enterBlackout);
+alphabetToggle.addEventListener('click', () => {
+  const showAlphabet = alphabetToggle.getAttribute('aria-pressed') !== 'true';
+  alphabetToggle.setAttribute('aria-pressed', String(showAlphabet));
+  alphabetToggle.textContent = showAlphabet ? '123' : 'ABC';
+  controlPad.querySelectorAll('.number-key').forEach((key) => { key.hidden = showAlphabet; });
+  controlPad.querySelectorAll('.alphabet-key').forEach((letter) => { letter.hidden = !showAlphabet; });
+});
 controlPad.addEventListener('click', (event) => {
   const button = event.target.closest('button[data-key]');
   if (!button || button.disabled) return;
@@ -505,7 +542,7 @@ notice.addEventListener('click', () => { notice.hidden = true; });
 window.addEventListener('keydown', (event) => {
   if (reportDialog.open) return;
   if (event.target.matches('input, textarea, select, [contenteditable="true"]') || event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
-  if (/^[0-9cClL]$/.test(event.key) || ['Enter', 'Backspace', 'Escape'].includes(event.key)) {
+  if (/^[0-9a-dA-D]$/.test(event.key) || ['Enter', 'Backspace', 'Escape'].includes(event.key)) {
     event.preventDefault();
     handleControlKey(event.key);
   }
@@ -515,7 +552,7 @@ document.querySelector('#previewReport').addEventListener('click', () => {
   if (!latestReport) return;
   try {
     sessionStorage.setItem('diamond-report-preview', JSON.stringify(latestReport));
-    document.querySelector('#reportEmbed').src = 'report.html?v=20261014-1';
+    document.querySelector('#reportEmbed').src = 'report.html?v=20261014-2';
     document.querySelector('#reportDialog').showModal();
   } catch {
     showNotice('Unable to open the report. Please allow browser storage for this site.');

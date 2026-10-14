@@ -11,7 +11,7 @@
     <title>Cutboard - Instant Video Switcher</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css?v=20261014-1">
-    <link rel="stylesheet" href="camera.css?v=20261014-2">
+    <link rel="stylesheet" href="camera.css?v=20261014-3">
   </head>
   <body>
     <main class="app-shell">
@@ -24,6 +24,7 @@
         <div class="top-actions">
           <button class="keypad-button" id="keypadButton" aria-pressed="false"><span aria-hidden="true">#</span> Keyboard</button>
           <button class="camera-button" id="cameraButton"><span aria-hidden="true"></span><b id="cameraButtonText">Enable camera</b></button>
+          <label class="zoom-control" id="cameraZoomControl" hidden>ZOOM <input id="cameraZoom" type="range" min="1" max="1" step="0.1" value="1" aria-label="Camera zoom"></label>
           <button class="blackout-button" id="blackoutButton" aria-label="Show current screen in full screen"><span aria-hidden="true"></span> Full screen</button>
           <button class="add-button" id="addButton"><b aria-hidden="true">+</b> Add videos</button>
         </div>
@@ -60,23 +61,25 @@
         </div>
         <button id="stageKeypadButton" class="keypad-button stage-keypad-button active" aria-label="Toggle keyboard" title="Toggle keyboard" aria-pressed="true"><span aria-hidden="true">#</span></button>
         <div id="controlPad" class="control-pad" aria-label="On-screen keyboard">
-          <button data-key="0">0</button>
-          <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button><button data-key="4">4</button>
-          <button data-key="5">5</button><button data-key="6">6</button><button data-key="7">7</button><button data-key="8">8</button>
-          <button data-key="9">9</button>
-          <button data-key="Backspace" aria-label="Backspace">&#9003;</button><button data-key="Escape">CLEAR</button><button data-key="Enter">START</button><button data-key="c">CAMERA</button><button data-key="l">LOGO</button>
+          <button class="number-key" data-key="0">0</button>
+          <button class="number-key" data-key="1">1</button><button class="number-key" data-key="2">2</button><button class="number-key" data-key="3">3</button><button class="number-key" data-key="4">4</button>
+          <button class="number-key" data-key="5">5</button><button class="number-key" data-key="6">6</button><button class="number-key" data-key="7">7</button><button class="number-key" data-key="8">8</button>
+          <button class="number-key" data-key="9">9</button>
+          <button class="alphabet-key" data-key="A" hidden>A</button><button class="alphabet-key" data-key="B" hidden>B</button><button class="alphabet-key" data-key="C" hidden>C</button><button class="alphabet-key" data-key="D" hidden>D</button>
+          <button data-key="Backspace" aria-label="Backspace">&#9003;</button><button data-key="Escape">CLEAR</button><button data-key="Enter">START</button><button data-key="CAMERA">CAMERA</button><button data-key="LOGO">LOGO</button>
         </div>
+        <button id="alphabetToggle" class="alphabet-toggle" aria-pressed="false">ABC</button>
       </section>
 
       <details class="library"><summary>Categories</summary><section aria-label="Video slots">
         <div class="library-heading">
           <div><span>CATEGORIES</span><strong id="videoCount">0 / 40</strong></div>
-          <div class="keyboard-hint"><kbd>L</kbd> LOGO <kbd>CODE + ENTER</kbd> PLAY <kbd>C</kbd> CAMERA</div>
+          <div class="keyboard-hint"><kbd>L</kbd> LOGO <kbd>CODE + ENTER</kbd> PLAY <kbd>CAMERA</kbd> CAMERA</div>
         </div>
         <div id="slots" class="slots"></div>
       </section></details>
       <button id="notice" class="notice" hidden aria-label="Dismiss message"><span id="noticeText"></span><b>×</b></button>
     </main>
-    <script src="app.js?v=20261014-5"></script>
+    <script src="app.js?v=20261014-6"></script>
   </body>
 </html>
