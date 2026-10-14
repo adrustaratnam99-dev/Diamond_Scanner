@@ -11,7 +11,7 @@
     <title>Cutboard - Instant Video Switcher</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css?v=20261014-1">
-    <link rel="stylesheet" href="camera.css?v=20261014-3">
+    <link rel="stylesheet" href="camera.css?v=20261014-4">
   </head>
   <body>
     <main class="app-shell">
@@ -24,7 +24,6 @@
         <div class="top-actions">
           <button class="keypad-button" id="keypadButton" aria-pressed="false"><span aria-hidden="true">#</span> Keyboard</button>
           <button class="camera-button" id="cameraButton"><span aria-hidden="true"></span><b id="cameraButtonText">Enable camera</b></button>
-          <label class="zoom-control" id="cameraZoomControl" hidden>ZOOM <input id="cameraZoom" type="range" min="1" max="1" step="0.1" value="1" aria-label="Camera zoom"></label>
           <button class="blackout-button" id="blackoutButton" aria-label="Show current screen in full screen"><span aria-hidden="true"></span> Full screen</button>
           <button class="add-button" id="addButton"><b aria-hidden="true">+</b> Add videos</button>
         </div>
@@ -34,6 +33,7 @@
       <section id="stage" class="stage logo-mode" aria-label="Video stage">
         <dialog id="reportDialog" aria-label="Report preview"><button id="closeReport" aria-label="Close report">Close report</button><iframe id="reportEmbed" title="Printable analysis report"></iframe></dialog>
         <video id="cameraPlayer" class="camera-player" autoplay muted playsinline aria-label="Live device camera"></video>
+        <label class="zoom-control" id="cameraZoomControl" hidden>ZOOM <input id="cameraZoom" type="range" min="1" max="1" step="0.1" value="1" aria-label="Camera zoom"></label>
         <div id="analysisHeader" class="analysis-header" hidden>
           <div class="analysis-logo-panel">
             <img src="drc-logo-clean.png" alt="DRC DS Gem and Diamond Analyzer 6">
@@ -80,6 +80,6 @@
       </section></details>
       <button id="notice" class="notice" hidden aria-label="Dismiss message"><span id="noticeText"></span><b>×</b></button>
     </main>
-    <script src="app.js?v=20261014-6"></script>
+    <script src="app.js?v=20261014-7"></script>
   </body>
 </html>

@@ -235,6 +235,7 @@ function showAnalysisResult(index, video) {
 }
 
 function enterBlackout() {
+  cameraZoomControl.hidden = true;
   if (reportDialog.open) reportDialog.close();
   codeBuffer = '';
   latestReport = null;
@@ -302,6 +303,7 @@ async function captureFreshSnapshot(generation) {
 function playSlot(index) {
   const video = state.videos[index];
   if (!video) return;
+  cameraZoomControl.hidden = true;
   let player = playerElements[index];
   if (!player) { player = createPlayer(video, index); players.append(player); }
   codeBuffer = '';
@@ -374,7 +376,6 @@ async function showCamera() {
         video: { facingMode: { ideal: 'environment' } },
         audio: false,
       });
-      updateCameraZoom();
       cameraPlayer.srcObject = state.cameraStream;
       state.cameraReady = true;
       cameraButton.classList.add('ready');
@@ -383,7 +384,9 @@ async function showCamera() {
     state.cameraActive = true;
     cameraPlayer.classList.add('camera-active');
     await cameraPlayer.play();
+    updateCameraZoom();
   } catch (error) {
+    cameraZoomControl.hidden = true;
     cameraButtonText.textContent = state.cameraReady ? 'Live camera' : 'Enable camera';
     if (error instanceof DOMException && error.name === 'NotAllowedError') {
       showNotice('Camera permission was not allowed. Enable it in the browser and press CAMERA again.');
