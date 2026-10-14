@@ -87,7 +87,7 @@ function handleControlKey(key) {
   else if (key.toLowerCase() === 'l') { clearNineKeyTimer(); codeBuffer = ''; enterBlackout(); }
 }
 
-const state = { videos: [], activeIndex: null, blackout: false, cameraActive: false, cameraReady: false, cameraStream: null };
+const state = { videos: [], activeIndex: null, blackout: true, cameraActive: false, cameraReady: false, cameraStream: null };
 const playerElements = [];
 let analysisTimer = null;
 let processingInterval = null;
@@ -240,6 +240,7 @@ function enterBlackout() {
   resetAnalysisPresentation();
   state.activeIndex = null;
   state.blackout = true;
+  stage.classList.add('logo-mode');
   state.cameraActive = false;
   cameraPlayer.classList.remove('camera-active');
   emptyStage.hidden = false;
@@ -315,6 +316,7 @@ function playSlot(index) {
     }
   });
   state.blackout = false;
+  stage.classList.remove('logo-mode');
   state.cameraActive = false;
   state.activeIndex = index;
   emptyStage.hidden = true;
@@ -352,6 +354,7 @@ async function showCamera() {
   resetAnalysisPresentation();
   state.activeIndex = null;
   state.blackout = false;
+  stage.classList.remove('logo-mode');
   codeBuffer = '';
   showIdleKeypad();
   emptyStage.hidden = true;
@@ -546,6 +549,14 @@ document.querySelector('#closeReport').addEventListener('click', () => document.
 window.addEventListener('message', (event) => {
   if (event.origin !== window.location.origin || event.source !== document.querySelector('#reportEmbed').contentWindow) return;
   if (event.data?.type === 'scanner-home') enterBlackout();
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.blackout) {
+    stage.classList.add('logo-mode');
+    emptyStage.hidden = false;
+    showIdleKeypad();
+  }
 });
 
 (async function initialize() {

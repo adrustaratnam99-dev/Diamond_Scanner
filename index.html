@@ -11,7 +11,7 @@
     <title>Cutboard - Instant Video Switcher</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css?v=20261014-1">
-    <link rel="stylesheet" href="camera.css?v=20261014-1">
+    <link rel="stylesheet" href="camera.css?v=20261014-2">
   </head>
   <body>
     <main class="app-shell">
@@ -30,7 +30,7 @@
         <input id="fileInput" class="file-input" type="file" accept="video/*" multiple>
       </header>
 
-      <section id="stage" class="stage" aria-label="Video stage">
+      <section id="stage" class="stage logo-mode" aria-label="Video stage">
         <dialog id="reportDialog" aria-label="Report preview"><button id="closeReport" aria-label="Close report">Close report</button><iframe id="reportEmbed" title="Printable analysis report"></iframe></dialog>
         <video id="cameraPlayer" class="camera-player" autoplay muted playsinline aria-label="Live device camera"></video>
         <div id="analysisHeader" class="analysis-header" hidden>
@@ -77,6 +77,6 @@
       </section></details>
       <button id="notice" class="notice" hidden aria-label="Dismiss message"><span id="noticeText"></span><b>×</b></button>
     </main>
-    <script src="app.js?v=20261014-2"></script>
+    <script src="app.js?v=20261014-3"></script>
   </body>
 </html>

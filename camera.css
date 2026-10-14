@@ -227,6 +227,10 @@
 .control-pad button { font-size: 11px; }
 .empty-stage { position: absolute; inset: 0; padding: 0; background: #020302; }
 .empty-stage > :not(.standby-logo) { display: none; }
+.app-shell:has(.stage.logo-mode) { height: 100dvh; overflow: hidden; }
+.app-shell:has(.stage.logo-mode) .topbar,
+.app-shell:has(.stage.logo-mode) .library { display: none; }
+.stage.logo-mode { height: 100dvh; min-height: 100dvh; border-bottom: 0; }
 .standby-logo { width: 100%; height: 100%; object-fit: contain; }
 .result-actions { position: absolute; left: 12px; right: 12px; top: 10px; z-index: 6; display: flex; justify-content: space-between; gap: 8px; }
 .report-preview-button { min-height: 38px; padding: 8px 12px; border: 1px solid #60665b; border-radius: 4px; background: #24272a; color: #edf2ed; font-size: 11px; cursor: pointer; }
