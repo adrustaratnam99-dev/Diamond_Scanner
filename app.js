@@ -486,7 +486,7 @@ fileInput.addEventListener('change', async () => {
 });
 addButton.addEventListener('click', () => fileInput.click());
 emptyAddButton.addEventListener('click', () => fileInput.click());
-document.querySelector('#blackoutButton').addEventListener('click', enterBlackout);
+document.querySelector('#blackoutButton').addEventListener('click', requestFullscreen);
 cameraButton.addEventListener('click', showCamera);
 [keypadButton, stageKeypadButton].forEach((button) => button.addEventListener('click', () => {
   keypadPreferred = controlPad.hidden;
